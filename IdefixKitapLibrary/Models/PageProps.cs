@@ -1,4 +1,4 @@
-﻿namespace IdefixKitapLibrary
+﻿namespace IdefixKitapLibrary.Models
 {
     public class PageProps
     {

@@ -1,8 +1,8 @@
-﻿namespace IdefixKitapLibrary
+﻿namespace IdefixKitapLibrary.Models
 {
     public class CategoryData
     {
-        public List<Items> Items { get; set; }
+        public List<Item> Items { get; set; }
         public int[] Pages { get; set; }
         public int RecordCount { get; set; }
     }

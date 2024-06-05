@@ -1,6 +1,6 @@
-﻿namespace IdefixKitapLibrary
+﻿namespace IdefixKitapLibrary.Models
 {
-    public class Images
+    public class Image
     {
         public int Height { get; set; }
         public int Width { get; set; }

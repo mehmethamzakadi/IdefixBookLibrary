@@ -1,4 +1,5 @@
-﻿using IdefixKitapLibrary;
+﻿using IdefixKitapLibrary.Database;
+using IdefixKitapLibrary.Models;
 using System.Text.Json;
 
 using (HttpClient client = new HttpClient())
@@ -6,7 +7,7 @@ using (HttpClient client = new HttpClient())
     try
     {
         // İstekte bulunmak istediğiniz URL
-        string url = $"https://www.idefix.com/_next/data/DZc9ty2rWkeNzKyJB1EKG/kitap-kultur-c-3307.json?sayfa=1&slug=kitap-kultur-c-3307";
+        string url = $"https://www.idefix.com/_next/data/DZc9ty2rWkeNzKyJB1EKG/kitap-kultur-c-3307.json?isSalable=false&slug=kitap-kultur-c-3307&siralama=desc_adde&sayfa=1";
 
         // GET isteği yapın
         HttpResponseMessage response = await client.GetAsync(url);
@@ -21,14 +22,24 @@ using (HttpClient client = new HttpClient())
             PropertyNameCaseInsensitive = true
         };
         var issues = JsonSerializer.Deserialize<IdefixBookResult>(responseBody, options);
-        var totalPage = issues.PageProps.CategoryData.Pages.Max();
+        var totalPage = issues.PageProps.CategoryData.RecordCount;
 
-        for (int i = 1; i < totalPage; i++)
+        for (int i = 296; i < totalPage; i++)
         {
-            string url2 = $"https://www.idefix.com/_next/data/DZc9ty2rWkeNzKyJB1EKG/kitap-kultur-c-3307.json?sayfa={i}&slug=kitap-kultur-c-3307";
-            // GET isteği yapın
+            string url2 = $"https://www.idefix.com/_next/data/DZc9ty2rWkeNzKyJB1EKG/kitap-kultur-c-3307.json?isSalable=false&slug=kitap-kultur-c-3307&siralama=desc_adde&sayfa={i}";
+
+            await Task.Delay(10000); // 10 saniye bekler
+
             HttpResponseMessage response2 = await client.GetAsync(url2);
-            response.EnsureSuccessStatusCode();
+
+            while (response2.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                response2 = await Refresh(i, client);
+            }
+
+            response2.EnsureSuccessStatusCode();
+
+
 
             // Cevap içeriğini string olarak alın
             string responseBody2 = await response2.Content.ReadAsStringAsync();
@@ -40,7 +51,8 @@ using (HttpClient client = new HttpClient())
             };
             var issues2 = JsonSerializer.Deserialize<IdefixBookResult>(responseBody2, options2);
 
-            // Sonuçları ekrana yazdırın
+
+            var kitapList = new List<Kitap>();
             foreach (var item in issues2.PageProps.CategoryData.Items)
             {
                 string kitapAdi = "";
@@ -50,8 +62,31 @@ using (HttpClient client = new HttpClient())
                 else
                     kitapAdi = parts[0];
 
-                Console.WriteLine($"Yazar: {item.AuthorName}, Yayınevi: {item.BrandName}, Kitap Adı: {kitapAdi}\n");
+                string fullName = item.Name;
+                string kategoriAdi = item.Properties.FirstOrDefault(x => x.Text == "Kategori")?.ValueText;
+                string basimDili = item.Properties.FirstOrDefault(x => x.Text == "Basım Dili")?.ValueText;
+
+                var kitap = new Kitap
+                {
+                    IdefixId = item.Id,
+                    KitapAdi = kitapAdi,
+                    FullName = fullName,
+                    BasimDili = basimDili,
+                    Kategori = kategoriAdi,
+                    YayinEvi = item.BrandName,
+                    YazarAdi = item.AuthorName,
+                    ImageUrl = item.Images.Count > 0 ? item.Images[0]?.Src : "",
+                    ImageHeight = item.Images.Count > 0 ? item.Images[0].Height : 0,
+                    ImageWidth = item.Images.Count > 0 ? item.Images[0].Height : 0,
+                };
+                kitapList.Add(kitap);
             }
+
+            using var context = new BookLibraryContext();
+            await context.Kitaplar.AddRangeAsync(kitapList);
+            await context.SaveChangesAsync();
+
+            Console.WriteLine($"{i} Nolu Sayfa Eklendi.");
         }
     }
     catch (HttpRequestException e)
@@ -61,4 +96,15 @@ using (HttpClient client = new HttpClient())
     }
 }
 
-Console.ReadLine();
+async Task<HttpResponseMessage> Refresh(int sayfa, HttpClient client)
+{
+    string url2 = $"https://www.idefix.com/_next/data/DZc9ty2rWkeNzKyJB1EKG/kitap-kultur-c-3307.json?isSalable=false&slug=kitap-kultur-c-3307&siralama=desc_adde&sayfa={sayfa}";
+
+    await Task.Delay(5000); // 10 saniye bekler
+
+    Console.WriteLine($"{sayfa} Nolu Sayfa Yeniden istek atıldı.");
+
+    HttpResponseMessage response2 = await client.GetAsync(url2);
+
+    return response2;
+}
