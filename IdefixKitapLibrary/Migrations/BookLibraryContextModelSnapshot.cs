@@ -33,10 +33,13 @@ namespace IdefixKitapLibrary.Migrations
                     b.Property<string>("BasimDili")
                         .HasColumnType("text");
 
-                    b.Property<string>("FullName")
-                        .HasColumnType("text");
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("IdefixId")
+                    b.Property<decimal?>("Fiyat")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("IdefixId")
                         .HasColumnType("integer");
 
                     b.Property<int>("ImageHeight")
@@ -53,6 +56,12 @@ namespace IdefixKitapLibrary.Migrations
 
                     b.Property<string>("KitapAdi")
                         .HasColumnType("text");
+
+                    b.Property<int?>("Stok")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("YayinEvi")
                         .HasColumnType("text");

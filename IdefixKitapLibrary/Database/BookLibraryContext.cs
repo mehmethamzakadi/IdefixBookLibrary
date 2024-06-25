@@ -7,7 +7,7 @@ namespace IdefixKitapLibrary.Database
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql("Server=vt1.bam.belsis.dmz;Database=BookLibrary;User Id=postgres;Password=ada11sql;");
+            optionsBuilder.UseNpgsql("Server=localhost;Database=BookLibrary;User Id=postgres;Password=postgrespw;");
         }
 
         public DbSet<Kitap> Kitaplar { get; set; }
